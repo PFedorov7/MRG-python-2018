@@ -2,72 +2,49 @@
 
 def process(data, events, car):
 
-    for train in data:
-        print(train['name'])
-        for carm in train['cars']:
-            print('\t{}'.format(carm['name']))
-            for man in carm['people']:
-                print('\t\t{}'.format(man))
-                
+    switched_cars = ''
+    last_car_num = 0
+    counter = 0
+    
     for event in events:
         if(event['type'] == 'walk'):
-            passenger = event['passenger']
-            distance = event['distance']
+            next_car = ''
             for train in data:
-                counter = 0
-                unitz = ''
                 for unit in train['cars']:
                     for figure in unit['people']:
-                        if(figure == passenger):
-                            num = int(unit['name'][1::]) + distance
-                            unitz = 'c' + str(num)
-                            for unit1 in train['cars']:
-                                if (unit1['name'] == unitz):
+                        if(figure == event['passenger'] ):
+                            next_car = 'c' + str(int(unit['name'][1::]) + event['distance'])
+                            for unit_check in train['cars']:
+                                if (unit_check['name'] == next_car):
                                     counter = 1
                             if (counter == 0):
                                 return -1 
                     if(counter):
-                        unit['people'].remove(passenger)
+                        unit['people'].remove(event['passenger'])
                         counter = 0
                 for unit in train['cars']:
-                    if(unitz == unit['name']):
-                        unit['people'].append(passenger)
+                    if(next_car == unit['name']):
+                        unit['people'].append(event['passenger'])
                         
-        if(event['type'] == 'switch'):
-            newcars = ''
-            names = 0
-            i = 0
+        if(event['type'] == 'switch'):    
             for train in data:
                 if (train['name'] == event['train_from']):
                     if(event['cars'] > 0):
-                        position = - event['cars']
-                        newcars = train['cars'][position::]
-                        train['cars'] = train['cars'][:position:]
+                        switched_cars = train['cars'][-event['cars']::]
+                        train['cars'] = train['cars'][:- event['cars']:]
                     else:
-                        position = event['cars']
-                        newcars = train['cars'][:position:]
-                        train['cars'] = train['cars'][position::]
+                        switched_cars = train['cars'][:event['cars']:]
+                        train['cars'] = train['cars'][event['cars']::]
             for train in data: 
                 if (train['name'] == event['train_to']):
                     if (len(train['cars'])):
-                        for carss in train['cars']:
-                            if(carss):
-                                names = int(carss['name'][1::])
-                        for newlist in newcars:
-                            i = i + 1
-                            newlist['name'] = 'c' + str(names + i)
-                        train['cars'].extend(newcars)
-                    else:
-                        train['cars'].extend(newcars)
+                        last_car_num = int(train['cars'][-1]['name'][1::])
+                        for newlist in switched_cars:
+                            counter += 1
+                            newlist['name'] = 'c' + str(last_car_num + counter)
+                    train['cars'].extend(switched_cars)
+                    counter = 0
                     
-    for train in data:
-        print(train['name'])
-        for carz in train['cars']:
-            print('\t{}'.format(carz['name']))
-            for man in carz['people']:
-                print('\t\t{}'.format(man))
-    
-    
     for train in data:
         for cars in train['cars']:
             if (cars['name'] == car):
