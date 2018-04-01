@@ -49,7 +49,7 @@ def parse(
             filename, file_extension = os.path.splitext(pattern)
             if (ignore_www and re.search(r'^www.', pattern)):
                 pattern = pattern[4::]
-            if(request_type and line.find(request_type) == -1):
+            if(request_type and line.find("\"" + request_type + ' ') == -1):
                 continue
             if (ignore_files and file_extension):
                 continue
