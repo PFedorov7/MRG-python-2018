@@ -20,13 +20,13 @@ def parse(
     f = open('log.log')
     total_dict = collections.defaultdict(int)
     time_dict = collections.defaultdict(int)
-    dt = None
 
     for line in f:
         if(start_at or stop_at):
             period = re.search(r'\d+\/\w+\/\d+\s[\d+:]+', line)
             if(period):
-                dt = make_datetime(period)
+
+                dt = datetime.strptime(period.group(), "%d/%b/%Y %H:%M:%S")
                 if (stop_at and dt > stop_at):
                     break
                 if (start_at and dt < start_at):
@@ -54,7 +54,6 @@ def parse(
             if(time):
                 time_dict[ pattern ] += int(time.group())  
 
-
     if (slow_queries):
         return calc(time_dict, total_dict)
     else:
@@ -77,15 +76,6 @@ def calc(time_dict, total_dict):
                 value = floor(key[1] / total_dict[key2])
                 return_list.append(value)
     return sorted(return_list, reverse = True)[:5]
-
-def make_datetime(period):
-    start_date = period.group()
-    month_str = re.search(r'[a-zA-Z]+', start_date)
-    month_num = strptime(month_str.group(),'%b').tm_mon
-    year_str = re.search(r'\d+\s+', start_date)
-    start_date = start_date.replace(month_str.group(), str(month_num))
-    start_date = start_date.replace(year_str.group(), year_str.group()[2:5])
-    return datetime.strptime(start_date, "%d/%m/%y %H:%M:%S")
 
 
 
