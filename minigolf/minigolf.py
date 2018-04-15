@@ -12,17 +12,42 @@ class Player:
     	return self._player
 
 
-class HitsMatch:
+class Match:
 
     hole = 1
+    nice_hit = 0
 
     def __init__(self, numbers, players):
 
         self.numbers = numbers
         self.players = players
+        self.generator = Match.generate_players(numbers, players)
+        self.table = Match.default_table(numbers, players)
 
-        self.generator = HitsMatch.generate_players(numbers, players)
-        self.table = HitsMatch.default_table(numbers, players)
+    @staticmethod
+    def generate_players(numbers, players):
+        iterations = numbers * 10
+        if(Match.hole > 1):
+            players.append(players.pop(0))
+        while (iterations):
+            for value in range(0, numbers):
+                yield players[value]
+            iterations -+ 1
+
+    @staticmethod
+    def default_table(numbers, players):
+        none_line = tuple([ None for i in range(0,len(players))])
+        name_line = tuple(player.name for player in players)
+        table = [none_line for i in range(1, numbers + 2)] 
+        table[0] = name_line
+        return table
+
+    def get_table(self):
+        return self.table
+
+
+
+class HitsMatch(Match):
 
     @staticmethod
     def generate_players(numbers, players):
@@ -92,20 +117,9 @@ class HitsMatch:
         else:
             raise RuntimeError('The match is over')
 
-    @staticmethod
-    def default_table(numbers, players):
-        none_line = tuple([ None for i in range(0,len(players))])
-        name_line = tuple(player.name for player in players)
-        table = [none_line for i in range(1, numbers + 2)] 
-        table[0] = name_line
-        return table
-
     @property
     def finished(self):
         return self.hole > self.numbers
-
-    def get_table(self):
-        return self.table
 
     def get_winners(self):
         if (self.hole > self.numbers):  
@@ -123,18 +137,9 @@ class HitsMatch:
             return champions
         else:
             raise RuntimeError('The match is over')
-class HolesMatch:
-    
-    nice_hit = 0
-    hole = 1
 
-    def __init__(self, numbers, players):
 
-        self.numbers = numbers
-        self.players = players
-
-        self.generator = HolesMatch.generate_players(numbers, players)
-        self.table = HolesMatch.default_table(numbers, players)
+class HolesMatch(Match):
 
     @staticmethod
     def generate_players(numbers, players):
@@ -145,14 +150,6 @@ class HolesMatch:
             for value in range(0, numbers):
                 yield players[value]
             iterations -+ 1
-
-    @staticmethod
-    def default_table(numbers, players):
-        none_line = tuple([ None for i in range(0,len(players))])
-        name_line = tuple(player.name for player in players)
-        table = [none_line for i in range(1, numbers + 2)] 
-        table[0] = name_line
-        return table
 
     def hit(self, success = False):
 
@@ -198,9 +195,6 @@ class HolesMatch:
     @property
     def finished(self):
         return HolesMatch.hole > self.numbers
-
-    def get_table(self):
-        return self.table
 
     def get_winners(self):
         if (HolesMatch.hole > self.numbers):  
