@@ -5,55 +5,92 @@ class Player:
         self._player = player
         self.score = 1
         self.attempt = 0
+        self.success = 0
 
     @property
     def name(self):
     	return self._player
 
+
 class HitsMatch:
+
+    hole = 1
 
     def __init__(self, numbers, players):
 
         self.numbers = numbers
         self.players = players
 
-        self.value = 0
-        self.hole = 1
-        self.big = [i for i in range(0, numbers)]
+        self.generator = HitsMatch.generate_players(numbers, players)
         self.table = HitsMatch.default_table(numbers, players)
+
+    @staticmethod
+    def generate_players(numbers, players):
+        iterations = numbers * 10
+        if(HitsMatch.hole > 1):
+            players.append(players.pop(0))
+        while (iterations):
+            for value in range(0, numbers):
+                yield players[value]
+            iterations -+ 1
+
+
+    def next_hole(self):
+
+        self.generator = HitsMatch.generate_players(self.numbers, self.players)
+        for player in self.players:
+            player.success = 0
+        HitsMatch.hole += 1
+
+    def make_table(self, next_player):
+
+        my_list = list(self.table[0])
+        player_index = my_list.index(next_player.name)
+
+        my_list1 = list(self.table[HitsMatch.hole])
+        my_list1[player_index] = next_player.score
+
+        my_tuple = tuple(my_list1)
+        self.table[HitsMatch.hole] = my_tuple
+
 
     def hit(self, success = False):
 
-        if (self.hole <= self.numbers):  
-            if (success == False):
-                self.players[self.big[self.value]].score += 1
-                if (self.players[self.big[self.value]].score == 10):
-                    self.make_table(self.big.pop(self.value))
-                if (self.value + 1 >= len(self.big)):
-                    self.value = 0
-                else:
-                    self.value += 1
+        next_player = next(self.generator)
+        while(next_player.success):
+            next_player = next(self.generator)
+
+        if (HitsMatch.hole <= self.numbers):
+            if(success):
+
+                next_player.success = 1
+                next_player.attempt += 1
+                next_player.score = next_player.attempt
+
+                self.make_table(next_player)
+
+                HitsMatch.nice_hit = 1
+                next_player.attempt = 0
+
             else:
+                next_player.score = 0
+                next_player.attempt += 1
+                if (next_player.attempt == 9):
 
-                self.make_table(self.big.pop(self.value))
-                if(self.value + 1 >= len(self.big)):
-                    self.value = 0
+                    next_player.score = 10
+                    next_player.attempt = 0
+                    next_player.success = 1
+                    self.make_table(next_player)
 
-            if(len(self.big) == 0):
-                self.value = self.hole
-                self.big = [i for i in range(0, self.numbers)]
-                self.hole += 1
-                for player in self.players:
-                    player.score = 1
+
+            hits = 0
+            for player in self.players:
+                hits += player.success
+            if(hits == self.numbers):
+                self.next_hole()
+
         else:
             raise RuntimeError('The match is over')
-
-    def make_table(self, index):
-        my_list = list(self.table[self.hole])
-        my_list[index] = self.players[index].score
-        my_tuple = tuple(my_list)
-        self.table[self.hole] = my_tuple
-
 
     @staticmethod
     def default_table(numbers, players):
@@ -72,10 +109,11 @@ class HitsMatch:
 
     def get_winners(self):
         if (self.hole > self.numbers):  
+
             total = collections.defaultdict(int)
             for line in self.table[1:]:
-                for player in self.big:
-                    total[player] += line[player]
+                for index, player in enumerate(line):
+                    total[index] += player
             last_list = sorted(total.items(), key=lambda x: x[1])
             max_score = last_list[0][1]
             champions = []
@@ -85,7 +123,6 @@ class HitsMatch:
             return champions
         else:
             raise RuntimeError('The match is over')
-
 class HolesMatch:
     
     nice_hit = 0
@@ -96,7 +133,6 @@ class HolesMatch:
         self.numbers = numbers
         self.players = players
 
-        self.last_player = players[-1].name
         self.generator = HolesMatch.generate_players(numbers, players)
         self.table = HolesMatch.default_table(numbers, players)
 
