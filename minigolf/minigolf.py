@@ -3,9 +3,9 @@ import collections
 class Player:
     def __init__(self, player):
         self._player = player
-        self.score = 1
-        self.attempt = 0
-        self.success = 0
+        self._score = 1
+        self._attempt = 0
+        self._success = 0
 
     @property
     def name(self):
@@ -14,22 +14,22 @@ class Player:
 class Match:
     hole = 1
     nice_hit = 0
-    def default_hole(self):
+    def _default_hole(self):
         Match.hole = 1
-    def default_nice_hit(self):
+    def _default_nice_hit(self):
         Match.nice_hit = 0
-    def inc_hole(self):
+    def _inc_hole(self):
         Match.hole += 1
-    def set_nice_hit(self):
+    def _set_nice_hit(self):
         Match.nice_hit = 1
 
     def __init__(self, numbers, players):
-        self.numbers = numbers
-        self.players = players
-        self.generator = Match.generate_players(numbers, players)
-        self.table = Match.default_table(numbers, players)
-        self.default_hole()
-        self.default_nice_hit()
+        self._numbers = numbers
+        self._players = players
+        self._generator = Match.generate_players(numbers, players)
+        self._table = Match.default_table(numbers, players)
+        self._default_hole()
+        self._default_nice_hit()
 
     @staticmethod
     def generate_players(numbers, players):
@@ -49,105 +49,105 @@ class Match:
         table[0] = name_line
         return table
 
-    def make_table(self, next_player):
-        my_list = list(self.table[0])
+    def _make_table(self, next_player):
+        my_list = list(self._table[0])
         player_index = my_list.index(next_player.name)
-        my_list1 = list(self.table[Match.hole])
-        my_list1[player_index] = next_player.score
+        my_list1 = list(self._table[Match.hole])
+        my_list1[player_index] = next_player._score
         my_tuple = tuple(my_list1)
-        self.table[Match.hole] = my_tuple
+        self._table[Match.hole] = my_tuple
 
     def get_table(self):
-        return self.table
+        return self._table
 
     @property
     def finished(self):
-        return Match.hole > self.numbers
+        return Match.hole > self._numbers
 
-    def next_hole(self):
-        self.generator = HitsMatch.generate_players(self.numbers, self.players)
-        for player in self.players:
-            player.success = 0
-            player.attempt = 0
-        self.inc_hole()
-        self.default_nice_hit()
+    def _next_hole(self):
+        self._generator = HitsMatch.generate_players(self._numbers, self._players)
+        for player in self._players:
+            player._success = 0
+            player._attempt = 0
+        self._inc_hole()
+        self._default_nice_hit()
 
     def get_winners(self):
-        if (HolesMatch.hole > self.numbers):  
+        if (HolesMatch.hole > self._numbers):  
             total = collections.defaultdict(int)
-            for line in self.table[1:]:
+            for line in self._table[1:]:
                 for index, player in enumerate(line):
                     total[index] += player
             last_list = sorted(total.items(), key=lambda x: x[1])
-            return self.check_winner(last_list, total)
+            return self._check_winner(last_list, total)
         else:
             raise RuntimeError('The match is over')
 
 class HitsMatch(Match):
     def hit(self, success = False):
-        next_player = next(self.generator)
+        next_player = next(self._generator)
 
-        while(next_player.success):
-            next_player = next(self.generator)
+        while(next_player._success):
+            next_player = next(self._generator)
 
-        if (HitsMatch.hole <= self.numbers):
+        if (HitsMatch.hole <= self._numbers):
             if(success):
-                next_player.success = 1
-                next_player.score = next_player.attempt + 1
-                self.make_table(next_player)
+                next_player._success = 1
+                next_player._score = next_player._attempt + 1
+                self._make_table(next_player)
             else:
-                next_player.score = 0
-                next_player.attempt += 1
-                if (next_player.attempt == 9):
-                    next_player.score = 10
-                    next_player.success = 1
-                    self.make_table(next_player)
+                next_player._score = 0
+                next_player._attempt += 1
+                if (next_player._attempt == 9):
+                    next_player._score = 10
+                    next_player._success = 1
+                    self._make_table(next_player)
             hits = 0
-            for player in self.players:
-                hits += player.success
-            if(hits == self.numbers):
-                self.next_hole()
+            for player in self._players:
+                hits += player._success
+            if(hits == self._numbers):
+                self._next_hole()
         else:
             raise RuntimeError('The match is over')
 
-    def check_winner(self, last_list, total):
+    def _check_winner(self, last_list, total):
         max_score = last_list[0][1]
         champions = []
         for champion in total:
             if(max_score >= total[champion]):
-                champions.append(self.players[champion])
+                champions.append(self._players[champion])
         return champions
 
 
 class HolesMatch(Match):
     def hit(self, success = False):
-        next_player = next(self.generator)
+        next_player = next(self._generator)
 
-        if (HolesMatch.hole <= self.numbers):
+        if (HolesMatch.hole <= self._numbers):
             if(success):
-                next_player.score = 1
-                self.make_table(next_player)
-                self.set_nice_hit()
+                next_player._score = 1
+                self._make_table(next_player)
+                self._set_nice_hit()
             else:
-                next_player.score = 0
-                next_player.attempt += 1
+                next_player._score = 0
+                next_player._attempt += 1
                 if (HolesMatch.nice_hit):
-                    self.make_table(next_player)
-                    if (next_player.name == self.players[-1].name):
-                        self.next_hole()
-                if (next_player.attempt == 10):
-                    self.make_table(next_player)
-                    if (next_player.name == self.players[-1].name):
-                        self.next_hole()
+                    self._make_table(next_player)
+                    if (next_player.name == self._players[-1].name):
+                        self._next_hole()
+                if (next_player._attempt == 10):
+                    self._make_table(next_player)
+                    if (next_player.name == self._players[-1].name):
+                        self._next_hole()
         else:
             raise RuntimeError('The match is over')
 
-    def check_winner(self, last_list, total):
+    def _check_winner(self, last_list, total):
         max_score = last_list[-1][1]
         champions = []
         for champion in total:
             if(max_score == total[champion]):
-                champions.append(self.players[champion])
+                champions.append(self._players[champion])
             else:
                 return champions
 
