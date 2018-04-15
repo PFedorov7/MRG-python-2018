@@ -11,18 +11,25 @@ class Player:
     def name(self):
     	return self._player
 
-
 class Match:
-
     hole = 1
     nice_hit = 0
+    def default_hole(self):
+        Match.hole = 1
+    def default_nice_hit(self):
+        Match.nice_hit = 0
+    def inc_hole(self):
+        Match.hole += 1
+    def set_nice_hit(self):
+        Match.nice_hit = 1
 
     def __init__(self, numbers, players):
-
         self.numbers = numbers
         self.players = players
         self.generator = Match.generate_players(numbers, players)
         self.table = Match.default_table(numbers, players)
+        self.default_hole()
+        self.default_nice_hit()
 
     @staticmethod
     def generate_players(numbers, players):
@@ -42,125 +49,85 @@ class Match:
         table[0] = name_line
         return table
 
+    def make_table(self, next_player):
+        my_list = list(self.table[0])
+        player_index = my_list.index(next_player.name)
+        my_list1 = list(self.table[Match.hole])
+        my_list1[player_index] = next_player.score
+        my_tuple = tuple(my_list1)
+        self.table[Match.hole] = my_tuple
+
     def get_table(self):
         return self.table
 
-
-
-class HitsMatch(Match):
-
-    @staticmethod
-    def generate_players(numbers, players):
-        iterations = numbers * 10
-        if(HitsMatch.hole > 1):
-            players.append(players.pop(0))
-        while (iterations):
-            for value in range(0, numbers):
-                yield players[value]
-            iterations -+ 1
-
+    @property
+    def finished(self):
+        return Match.hole > self.numbers
 
     def next_hole(self):
-
         self.generator = HitsMatch.generate_players(self.numbers, self.players)
         for player in self.players:
             player.success = 0
-        HitsMatch.hole += 1
-
-    def make_table(self, next_player):
-
-        my_list = list(self.table[0])
-        player_index = my_list.index(next_player.name)
-
-        my_list1 = list(self.table[HitsMatch.hole])
-        my_list1[player_index] = next_player.score
-
-        my_tuple = tuple(my_list1)
-        self.table[HitsMatch.hole] = my_tuple
-
-
-    def hit(self, success = False):
-
-        next_player = next(self.generator)
-        while(next_player.success):
-            next_player = next(self.generator)
-
-        if (HitsMatch.hole <= self.numbers):
-            if(success):
-
-                next_player.success = 1
-                next_player.attempt += 1
-                next_player.score = next_player.attempt
-
-                self.make_table(next_player)
-
-                HitsMatch.nice_hit = 1
-                next_player.attempt = 0
-
-            else:
-                next_player.score = 0
-                next_player.attempt += 1
-                if (next_player.attempt == 9):
-
-                    next_player.score = 10
-                    next_player.attempt = 0
-                    next_player.success = 1
-                    self.make_table(next_player)
-
-
-            hits = 0
-            for player in self.players:
-                hits += player.success
-            if(hits == self.numbers):
-                self.next_hole()
-
-        else:
-            raise RuntimeError('The match is over')
-
-    @property
-    def finished(self):
-        return self.hole > self.numbers
+            player.attempt = 0
+        self.inc_hole()
+        self.default_nice_hit()
 
     def get_winners(self):
-        if (self.hole > self.numbers):  
-
+        if (HolesMatch.hole > self.numbers):  
             total = collections.defaultdict(int)
             for line in self.table[1:]:
                 for index, player in enumerate(line):
                     total[index] += player
             last_list = sorted(total.items(), key=lambda x: x[1])
-            max_score = last_list[0][1]
-            champions = []
-            for champion in total:
-                if(max_score >= total[champion]):
-                    champions.append(self.players[champion])
-            return champions
+            return self.check_winner(last_list, total)
         else:
             raise RuntimeError('The match is over')
 
+class HitsMatch(Match):
+    def hit(self, success = False):
+        next_player = next(self.generator)
+
+        while(next_player.success):
+            next_player = next(self.generator)
+
+        if (HitsMatch.hole <= self.numbers):
+            if(success):
+                next_player.success = 1
+                next_player.score = next_player.attempt + 1
+                self.make_table(next_player)
+            else:
+                next_player.score = 0
+                next_player.attempt += 1
+                if (next_player.attempt == 9):
+                    next_player.score = 10
+                    next_player.success = 1
+                    self.make_table(next_player)
+            hits = 0
+            for player in self.players:
+                hits += player.success
+            if(hits == self.numbers):
+                self.next_hole()
+        else:
+            raise RuntimeError('The match is over')
+
+    def check_winner(self, last_list, total):
+        max_score = last_list[0][1]
+        champions = []
+        for champion in total:
+            if(max_score >= total[champion]):
+                champions.append(self.players[champion])
+        return champions
+
 
 class HolesMatch(Match):
-
-    @staticmethod
-    def generate_players(numbers, players):
-        iterations = numbers * 10
-        if(HolesMatch.hole > 1):
-            players.append(players.pop(0))
-        while (iterations):
-            for value in range(0, numbers):
-                yield players[value]
-            iterations -+ 1
-
     def hit(self, success = False):
-
         next_player = next(self.generator)
+
         if (HolesMatch.hole <= self.numbers):
             if(success):
                 next_player.score = 1
                 self.make_table(next_player)
-                HolesMatch.nice_hit = 1
-                next_player.attempt = 0
-
+                self.set_nice_hit()
             else:
                 next_player.score = 0
                 next_player.attempt += 1
@@ -168,7 +135,6 @@ class HolesMatch(Match):
                     self.make_table(next_player)
                     if (next_player.name == self.players[-1].name):
                         self.next_hole()
-
                 if (next_player.attempt == 10):
                     self.make_table(next_player)
                     if (next_player.name == self.players[-1].name):
@@ -176,42 +142,15 @@ class HolesMatch(Match):
         else:
             raise RuntimeError('The match is over')
 
-    def next_hole(self):
-        self.generator = HolesMatch.generate_players(self.numbers, self.players)
-        HolesMatch.hole += 1
-        HolesMatch.nice_hit = 0
+    def check_winner(self, last_list, total):
+        max_score = last_list[-1][1]
+        champions = []
+        for champion in total:
+            if(max_score == total[champion]):
+                champions.append(self.players[champion])
+            else:
+                return champions
 
-    def make_table(self, next_player):
 
-        my_list = list(self.table[0])
-        player_index = my_list.index(next_player.name)
 
-        my_list1 = list(self.table[HolesMatch.hole])
-        my_list1[player_index] = next_player.score
 
-        my_tuple = tuple(my_list1)
-        self.table[HolesMatch.hole] = my_tuple
-
-    @property
-    def finished(self):
-        return HolesMatch.hole > self.numbers
-
-    def get_winners(self):
-        if (HolesMatch.hole > self.numbers):  
-
-            total = collections.defaultdict(int)
-            for line in self.table[1:]:
-                for index, player in enumerate(line):
-                    total[index] += player
-
-            last_list = sorted(total.items(), key=lambda x: x[1])
-            max_score = last_list[-1][1]
-            champions = []
-            for champion in total:
-                if(max_score == total[champion]):
-                    champions.append(self.players[champion])
-                else:
-                    break
-            return champions
-        else:
-            raise RuntimeError('The match is over')
