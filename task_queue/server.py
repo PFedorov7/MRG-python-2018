@@ -1,13 +1,17 @@
 import shelve
 import socket
 import random
-from collections import deque
+from collections import defaultdict
+from collections import OrderedDict
 
 def run():
 
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.bind(('', 5555))
 	sock.listen(10)
+
+	SP = 0
+	SP_dict = defaultdict(int)
 
 	while(True):
 		conn, addr = sock.accept()
@@ -17,36 +21,43 @@ def run():
 
 		if(data[0] == 'ADD'):
 			str_id = id_generator()
+			data.append(SP)
 			data.append(str_id)
 			db = shelve.open("Tasks")
-			db[data[1]] = [ data[2:] ]
-			print(db.values())
-			db.close()
+			db[str_id] = data[1:]
 			conn.send(str_id)
+			SP += 1
+			db.close()
 
 		if(data[0] =='IN'):
 			db = shelve.open("Tasks")
-			if(db.has_key(data[1])):
+			if ( db.has_key(data[2]) and db[data[2]][0] == data[1]):
 				conn.send('YES')
 			else:
 				conn.send('NO')
 			db.close()
 
-		if(data[0] =='GET'):
+		if(data[0] == 'GET'):
 			db = shelve.open("Tasks")
-			return_string = db[data[1]][0][-1] + ' ' + db[data[1]][0][0] + ' ' + db[data[1]][0][1]
-			conn.send(return_string)
-			db.close()
+			check_que_list = []
+			for task_id in db:
+				if (db[task_id][0] == data[1]):
+					check_que_list.append(db[task_id])
+			if (len(check_que_list) == 0):
+				conn.send('NONE')
+			else:
+				sorted_check_que_list = sorted(check_que_list, key=lambda x : x[3] )
+				return_string = sorted_check_que_list[SP_dict[data[1]]][4] + ' ' + sorted_check_que_list[SP_dict[data[1]]][1] + ' ' + sorted_check_que_list[SP_dict[data[1]]][2]
+				SP_dict[data[1]] += 1
+				conn.send(return_string)
 
 		if(data[0] =='ACK'):
 			db = shelve.open("Tasks")
-			if(db.has_key(data[1]) and db[data[1]][0][-1] == data[2]):
+			if(db.has_key(data[2]) and db[data[2]][0] == data[1]):
 				conn.send("YES")
-				del db[data[1]]
+				db.pop(data[2])
 			else:
 				conn.send("NO")
-			db.close()
-
 		conn.close()
 	sock.close()
 
