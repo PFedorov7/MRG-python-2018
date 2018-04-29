@@ -1,5 +1,6 @@
 from unittest import TestCase
 import time
+import shelve
 import socket
 import subprocess
 from server import run
@@ -24,7 +25,6 @@ class ServerBaseTest(TestCase):
         return data
 
     def test_base_scenario(self):
-
         task_id = self.send(b'ADD 1 5 12345')
         self.assertEqual(b'YES', self.send(b'IN 1 ' + task_id))
         self.assertEqual(task_id + b' 5 12345', self.send(b'GET 1'))
@@ -33,19 +33,38 @@ class ServerBaseTest(TestCase):
         self.assertEqual(b'NO', self.send(b'ACK 1 ' + task_id))
         self.assertEqual(b'NO', self.send(b'IN 1 ' + task_id))
 
-    # def test_two_tasks(self):
-    #     first_task_id = self.send(b'ADD 1 5 12345')
-    #     second_task_id = self.send(b'ADD 1 5 12345')
-    #    self.assertEqual(b'YES', self.send(b'IN 1 ' + first_task_id))
-    #    self.assertEqual(b'YES', self.send(b'IN 1 ' + second_task_id))
+    def test_two_tasks(self):
+        first_task_id = self.send(b'ADD 1 5 12345')
+        second_task_id = self.send(b'ADD 1 5 12345')
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + first_task_id))
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + second_task_id))
+        self.assertEqual(first_task_id + b' 5 12345', self.send(b'GET 1'))
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + first_task_id))
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + second_task_id))
+        self.assertEqual(second_task_id + b' 5 12345', self.send(b'GET 1'))
+        self.assertEqual(b'YES', self.send(b'ACK 1 ' + second_task_id))
+        self.assertEqual(b'NO', self.send(b'ACK 1 ' + second_task_id))
 
-    #     self.assertEqual(first_task_id + b' 5 12345', self.send(b'GET 1'))
-    #     self.assertEqual(b'YES', self.send(b'IN 1 ' + first_task_id))
-    #     self.assertEqual(b'YES', self.send(b'IN 1 ' + second_task_id))
-    #     self.assertEqual(second_task_id + b' 5 12345', self.send(b'GET 1'))
+    def test_two_tasks_down(self):
+        first_task_id = self.send(b'ADD 1 5 12345')
+        second_task_id = self.send(b'ADD 1 5 12345')
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + first_task_id))
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + second_task_id))
+        self.assertEqual(first_task_id + b' 5 12345', self.send(b'GET 1'))
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + first_task_id))
 
-    #     self.assertEqual(b'YES', self.send(b'ACK 1 ' + second_task_id))
-    #     self.assertEqual(b'NO', self.send(b'ACK 1 ' + second_task_id))
+        self.tearDown()
+        self.setUp()
+
+        self.assertEqual(b'YES', self.send(b'IN 1 ' + second_task_id))
+        self.assertEqual(second_task_id + b' 5 12345', self.send(b'GET 1'))
+        self.assertEqual(b'YES', self.send(b'ACK 1 ' + second_task_id))
+        self.assertEqual(b'NO', self.send(b'ACK 1 ' + second_task_id))
+
+    def test_two_queue(self):
+        pass
+
+
 
 
 if __name__ == '__main__':
