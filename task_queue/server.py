@@ -1,8 +1,7 @@
 import shelve
 import socket
 import random
-from collections import defaultdict
-from collections import OrderedDict
+import time
 
 def run():
 
@@ -10,11 +9,23 @@ def run():
 	sock.bind(('', 5555))
 	sock.listen(10)
 
+	timer_dict = {}
+	delete = 0
 	while(True):
 		conn, addr = sock.accept()
-		print ('Connected')
 		data = conn.recv(1024)
 		data = data.split(' ')
+
+		for times in timer_dict:
+			if(time.time() - timer_dict[times] > 300):
+				print("Timeout")
+				db = shelve.open("Tasks")
+				db[times] = db[times][0:-1]
+				delete = times
+				db.close()
+		if (delete):
+			timer_dict.pop(delete)
+			delete = 0
 
 		if(data[0] == 'ADD'):
 			db = shelve.open("Tasks")
@@ -53,11 +64,12 @@ def run():
 				return_string = min_id + ' ' + db[min_id][1] + ' ' + db[min_id][2]
 				db[min_id] += ['metka']
 				conn.send(return_string)
+				timer_dict[min_id] = time.time()
 			db.close()
 
 		if(data[0] =='ACK'):
 			db = shelve.open("Tasks")
-			if(db.has_key(data[2])):
+			if(db.has_key(data[2]) and db[data[2]][-1] == 'metka'):
 				conn.send("YES")
 				db.pop(data[2])
 			else:
