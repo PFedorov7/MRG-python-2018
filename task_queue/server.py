@@ -87,8 +87,6 @@ def id_generator():
 	str_id = ''.join([random.choice(ls) for x in range(10)])
 	return str_id
 
-def timeout():
-	pass
 
 if __name__ == '__main__':
     run()
