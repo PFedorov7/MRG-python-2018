@@ -1,0 +1,14 @@
+storage:
+  directory: /Users/andrejfedorov/MRG-python-2018/async_file_storage/tmp/A/
+  self:
+    host: localhost
+    port: 8081
+  mode:
+    save: yes
+  nodes:
+    B:
+      host: localhost
+      port: 8082
+    C:
+      host: localhost
+      port: 8083
