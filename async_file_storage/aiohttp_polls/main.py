@@ -2,11 +2,13 @@ from aiohttp import web
 from aiohttp import ClientSession
 import requests
 import threading
+import urllib.request
 from settings import get_config
 import asyncio
 import argparse
+import weakref
 import pprint
-
+import sys
 
 async def handle(request):
 	filename = request.match_info.get('file')
@@ -26,28 +28,26 @@ async def handle(request):
 			return web.Response(text=file.read())
 		except FileNotFoundError:
 			filename = filename + '.'
-			threads = []
-			t = threading.Thread(target=worker(filename))
-			threads.append(t)
-			t.start()
+			while(True):
+				for item in nodes.values():
+					t1 = loop.create_task(ask_nodes(filename, item))
+					buff = await t1
+					if(buff != '404'):
+						return buff
+			return web.Response(text='404')
 
-
-def worker(filename):
-	second_loop = asyncio.new_event_loop()	
-	tasks = asyncio.gather(
-	 			* [ ask_nodes(filename, item) for item in nodes.values() ]
-	 		)
-	second_loop.run_until_complete(tasks)
 
 async def ask_nodes(filename, item):
 	async with ClientSession() as session:
 		response =  await fetch(session, 'http://{}:{}/{}'.format(item['host'], item['port'], filename))
+		if(response == '404'):
+			return '404'
 		return web.Response(text=response)
 
 
 async def fetch(session, url):
-    async with session.get(url) as response:
-        return await response.text()
+	async with session.get(url) as response:
+		return await response.text()
 
 parser = argparse.ArgumentParser()
 parser.add_argument ('--config', help=' put configuration to YAML path file')
