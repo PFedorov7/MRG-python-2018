@@ -28,13 +28,17 @@ async def handle(request):
 			return web.Response(text=file.read())
 		except FileNotFoundError:
 			filename = filename + '.'
+			counter = 0
 			while(True):
 				for item in nodes.values():
 					t1 = loop.create_task(ask_nodes(filename, item))
 					buff = await t1
 					if(buff != '404'):
 						return buff
-			return web.Response(text='404')
+					else:
+						counter += 1
+						if (counter == len(nodes.values())):
+							return web.Response(text='404')
 
 
 async def ask_nodes(filename, item):
