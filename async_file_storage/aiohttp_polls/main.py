@@ -3,20 +3,25 @@ from aiohttp import ClientSession
 import requests
 import threading
 import urllib.request
-from settings import get_config
+from Settings import get_config
 import asyncio
 import argparse
 import pprint
 import sys
 
+import Reader
+import Writer
+
 async def handle(request):
 	filename = request.match_info.get('file')
-	if(filename.endswith('.')):
 
-		new_filename  =  filename[0:-1]
+	# This sign '..' indicates that this request came from a neighboring server
+	if(filename.endswith('..')):
+
+		new_filename  =  filename[0:-2]
 		path_to_file = directory + new_filename
 
-		t2 = Reader(path_to_file)
+		t2 = Reader.Reader(path_to_file)
 		t2.start()
 		t2.join()
 
@@ -24,69 +29,38 @@ async def handle(request):
 	else:
 		path_to_file = directory + filename
 
-		t = Reader(path_to_file)
+		t = Reader.Reader(path_to_file)
 		t.start()
 		t.join()
 
 		if(t.get_file() == '404'):
-			filename = filename + '.'
+			filename = filename + '..'
 			counter = 0
 			while(True):
 				for item in nodes.values():
-					t1 = loop.create_task(ask_nodes(filename, item))
+					t1 = loop.create_task(ask_nodes(filename, item, path_to_file))
 					buff = await t1
 					if(buff != '404'):
-						t4 = Writer(buff, path_to_file)
-						t4.start()
-						t4.join()
 						return buff
 					else:
+						#if all servers answer 404
 						counter += 1
 						if (counter == len(nodes.values())):
 							return web.Response(text='404')
-		return web.Response(text=t.get_file())
+		else:
+			return web.Response(text=t.get_file())
 
 
-class Reader(threading.Thread):
-	
-	def __init__(self, filename):
-		threading.Thread.__init__(self)
-		self.daemon = True
-		self.filename = filename
-		self.buf = ''
-
-	def run(self):
-		try:
-			f = open(self.filename)
-			self.buf = f.read()
-			f.close()
-		except FileNotFoundError:
-			self.buf = '404'
-
-	def get_file(self):
-		return self.buf
-
-class Writer(threading.Thread):
-
-	def __init__(self, buf, path):
-		threading.Thread.__init__(self)
-		self.daemon = True
-		self.path = path
-		self.buf = buf
-
-	def run(self):
-
-		f = open(self.path, "w")
-		f.write(self.buf)
-		f.close()
-
-
-
-async def ask_nodes(filename, item):
+async def ask_nodes(filename, item, path_to_file):
 	async with ClientSession() as session:
 		response =  await fetch(session, 'http://{}:{}/{}'.format(item['host'], item['port'], filename))
 		if(response == '404'):
 			return '404'
+
+		t4 = Writer.Writer(response, path_to_file)
+		t4.start()
+		t4.join()
+
 		return web.Response(text=response)
 
 async def fetch(session, url):
