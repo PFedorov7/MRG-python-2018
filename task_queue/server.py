@@ -34,7 +34,7 @@ def run():
 
 		if(data[0] == 'ADD'):
 			db = shelve.open("Tasks")
-			pointer = 0 #pointer is the priority of the queue
+			pointer = 0 #pointer is the priority of the task
 			#If there are already tasks in the queue, 
 			#we need to determine the priority of the last one 
 			if db.keys():
@@ -61,7 +61,7 @@ def run():
 
 		if(data[0] == 'GET'):
 			db = shelve.open("Tasks")
-			check_que_dict = {} # key - task pointer : value - task id 
+			check_que_dict = {} # key : task pointer , value : task id 
 			for task_id in db:
 				if (db[task_id][0] == data[1] and db[task_id][-1] != 'metka'):
 					check_que_dict[ db[task_id][-1] ] = task_id
@@ -80,7 +80,7 @@ def run():
 				conn.send(return_string)
 
 				#Set 5 min timer for transmitted task
-				#The task returns to queue if timeout('metka' will bi deleted) 
+				#The task returns to queue if timeout('metka' will be deleted) 
 				timer_dict[min_id] = time.time()
 			db.close()
 
