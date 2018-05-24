@@ -1,16 +1,13 @@
 from aiohttp import web
 from aiohttp import ClientSession
-import requests
-import threading
-import urllib.request
-from Settings import get_config
 import asyncio
 import argparse
-import pprint
-import sys
+import threading
+import argparse
 
 import Reader
 import Writer
+from Settings import get_config
 
 async def handle(request):
 	filename = request.match_info.get('file')
