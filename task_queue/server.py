@@ -86,7 +86,7 @@ def run():
 
 		if(data[0] =='ACK'):
 			db = shelve.open("Tasks")
-			#if the task was transmitted and 
+			#if the task was transmitted and task is in queue
 			if(db.has_key(data[2]) and data[1] == db[data[2]][0] and db[data[2]][-1] == 'metka'):
 				conn.send("YES")
 				db.pop(data[2])
