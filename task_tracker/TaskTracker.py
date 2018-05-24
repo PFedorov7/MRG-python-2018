@@ -1,8 +1,7 @@
 import pymysql
 
+class TaskTracker:
 
-class TackTracker:
-    
     def __init__(self, db, host, user, password):
         self._connection = pymysql.connect(host=host,
                                      user=user,
@@ -49,7 +48,7 @@ class TackTracker:
         self._connection.close()
 
 if __name__ == '__main__':
-    db = TackTracker('Task_Tracker', 'localhost', 'root', 'pass')
+    db = TaskTracker('Task_Tracker', 'localhost', 'root', 'pass')
 
     db.add_task()
     db.add_task()
