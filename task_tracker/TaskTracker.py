@@ -2,9 +2,7 @@ import pymysql
 
 
 class TackTracker:
-    STATUS_NEW_TASK = 'New task'
-    STATUS_COMPLETED_TASK = 'Completed task'
-
+    
     def __init__(self, db, host, user, password):
         self._connection = pymysql.connect(host=host,
                                      user=user,
